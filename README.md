@@ -60,15 +60,9 @@ Klik rechtsboven op **Fork** om een kopie te maken onder je eigen GitHub-account
    - Bot permissions: `Send Messages`, `Manage Roles`, `Read Message History`
 6. Kopieer de gegenereerde URL en open die in je browser om de bot toe te voegen aan je server
 
-### Stap 3 — Pas de server-ID aan in de code
+### Stap 3 — Noteer je server-ID
 
-Zoek in [Passbot.py](Passbot.py) deze regel:
-
-```python
-guild = discord.Object(id=GUILD_ID_REMOVED)
-```
-
-Vervang `GUILD_ID_REMOVED` door de ID van jouw server. (Rechtermuisklik op je server in Discord → **Copy Server ID** — zet ontwikkelaarsmodus aan via Instellingen → Geavanceerd)
+Rechtermuisklik op je server in Discord → **Copy Server ID**. (Zet ontwikkelaarsmodus aan via Instellingen → Geavanceerd als de optie ontbreekt.) Je hebt dit nodig in stap 4.
 
 ### Stap 4 — Lokaal draaien
 
@@ -82,6 +76,7 @@ pip install -r requirements.txt
 
 # 3. Maak een .env bestand aan
 echo TOKEN=jouw_discord_token_hier > .env
+echo GUILD_ID=jouw_server_id_hier >> .env
 
 # 4. Start de bot
 python Passbot.py
@@ -104,8 +99,8 @@ python Passbot.py
 
 1. Ga in Railway naar je project → **Variables**
 2. Voeg toe:
-   - **Name:** `TOKEN`
-   - **Value:** jouw Discord bot token
+   - **Name:** `TOKEN` — **Value:** jouw Discord bot token
+   - **Name:** `GUILD_ID` — **Value:** jouw server-ID
 3. Klik op **Save**
 
 > Commit je `.env` bestand **nooit** naar GitHub. Het staat al in `.gitignore`.
@@ -120,6 +115,7 @@ Railway start de bot automatisch na elke push naar de `main` branch van je GitHu
 
 ```
 TOKEN=jouw_discord_token_hier
+GUILD_ID=jouw_server_id_hier
 ```
 
 ---
