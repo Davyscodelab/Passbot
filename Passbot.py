@@ -12,6 +12,11 @@ token: str | None = os.getenv('TOKEN')
 if token is None:
     raise ValueError("FOUT: Kon het token niet vinden. Controleer of je .env bestand 'TOKEN=jouw_token' bevat.")
 
+guild_id_str = os.getenv('GUILD_ID')
+if guild_id_str is None:
+    raise ValueError("FOUT: Kon de guild ID niet vinden. Controleer of je .env bestand 'GUILD_ID=jouw_guild_id' bevat.")
+guild_id = int(guild_id_str)
+
 # Intents (nodig voor member join en berichten)
 intents = discord.Intents.default()
 intents.members = True          # Voor on_member_join
@@ -159,7 +164,7 @@ async def on_ready():
    
     # Sync slash commands voor jouw server (vervang JE_SERVER_ID)
     try:
-        guild = discord.Object(id=GUILD_ID_REMOVED)
+        guild = discord.Object(id=guild_id)
         bot.tree.copy_global_to(guild=guild)
         synced = await bot.tree.sync(guild=guild)
         print(f"✅ {len(synced)} slash command(s) succesvol gesynced voor deze server.")
