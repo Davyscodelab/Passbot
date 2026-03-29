@@ -2,7 +2,7 @@
 
 ![Banner](Banner.png)
 
-Een Discord-bot op maat voor de vereniging — gebouwd met [discord.py](https://discordpy.readthedocs.io/). Passbot verwelkomt nieuwe leden, kent rollen toe en geeft leden de mogelijkheid om zelf hun land en contactvoorkeur in te stellen via slash commands.
+Een Discord-bot op maat voor de vereniging — gebouwd met [discord.py](https://discordpy.readthedocs.io/). Passbot verwelkomt nieuwe leden, kent rollen toe en geeft leden de mogelijkheid om zelf hun land en contactvoorkeur in te stellen via emoji-reacties of slash commands.
 
 ---
 
@@ -12,10 +12,39 @@ Een Discord-bot op maat voor de vereniging — gebouwd met [discord.py](https://
 |---|---|
 | **Automatisch welkomstbericht** | Wanneer iemand de server joint, stuurt de bot een berichtje in `#stel-je-voor` |
 | `/welcome @gebruiker` | (Mods) Geeft de rol **Actief lid** en stuurt een uitgebreid welkomstbericht |
-| `/land` | Leden kiezen zelf hun landrol: **België** of **Nederland** |
-| `/contact` | Leden stellen zelf in hoe ze gecontacteerd mogen worden |
+| `/setup-reactierollen` | (Mods) Plaatst het reactierollen-bericht in `#rol-aanvragen` — leden kiezen dan via emoji hun land- en contactrol |
+| `/land` | Leden kiezen zelf hun landrol via slash command: **België** of **Nederland** |
+| `/contact` | Leden stellen zelf in hoe ze gecontacteerd mogen worden via slash command |
 | `/wie` | Toont wie de bot ontwikkeld heeft en voor welke groep |
-| **Uitleg in `#rol-aanvragen`** | Wanneer iemand een bericht typt in dat kanaal, legt de bot automatisch uit welke slash commands beschikbaar zijn |
+| **Uitleg in `#rol-aanvragen`** | Wanneer iemand een bericht typt in dat kanaal, legt de bot automatisch uit hoe rollen aangevraagd kunnen worden (via reacties én via slash commands) |
+
+---
+
+## Reactierollen activeren (voor moderators)
+
+De bot ondersteunt een **reactierollen-systeem** waarbij leden een rol krijgen door te reageren op een vastgepind bericht in `#rol-aanvragen`. Dit moet eenmalig door een moderator ingesteld worden:
+
+### Stap 1 — Gebruik `/setup-reactierollen`
+
+Typ dit slash command in een kanaal op je server. De bot stuurt dan automatisch een bericht in `#rol-aanvragen` met de juiste emoji's:
+
+| Emoji | Rol |
+|---|---|
+| 🇧🇪 | België |
+| 🇳🇱 | Nederland |
+| 💚 | PB altijd welkom |
+| 🤔 | Vraag voor PB |
+| 🚫 | PB me niet |
+
+> Land- en contactrollen binnen dezelfde categorie sluiten elkaar uit. Als een lid van emoji wisselt, wordt de vorige rol automatisch verwijderd.
+
+### Stap 2 — (Optioneel) Pinnen
+
+Pin het geplaatste bericht in `#rol-aanvragen` zodat leden het makkelijk terugvinden.
+
+### Persistentie
+
+Het bericht-ID wordt opgeslagen in `reaction_roles.json` in de projectmap. Zo blijft het systeem werken na een herstart van de bot. Verwijder dit bestand **niet** tenzij je het bericht opnieuw wil aanmaken met `/setup-reactierollen`.
 
 ---
 
