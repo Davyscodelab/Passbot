@@ -52,20 +52,28 @@ Zorg ervoor dat de volgende **kanalen** en **rollen** aangemaakt zijn op je serv
 
 1. Ga naar de [Discord Developer Portal](https://discord.com/developers/applications)
 2. Klik op **New Application** en geef het een naam
-3. Ga naar **Bot** → klik op **Reset Token** → kopieer het token
+3. Ga naar **Bot** → klik op **Reset Token** → kopieer het token (je hebt dit nodig in stap 4)
 4. Zet onder **Privileged Gateway Intents** de volgende aan:
    - `SERVER MEMBERS INTENT`
    - `MESSAGE CONTENT INTENT`
-5. Ga naar **OAuth2 → URL Generator**:
-   - Scopes: `bot`, `applications.commands`
-   - Bot permissions: `Send Messages`, `Manage Roles`, `Read Message History`
-6. Kopieer de gegenereerde URL en open die in je browser om de bot toe te voegen aan je server
 
-### Stap 2 — Noteer je server-ID
+### Stap 2 — Voeg de bot toe aan je server
 
-Rechtermuisklik op je server in Discord → **Copy Server ID**. (Zet ontwikkelaarsmodus aan via Instellingen → Geavanceerd als de optie ontbreekt.) Je hebt dit nodig in stap 3.
+De bot moet uitgenodigd worden via een OAuth2-link. Die link vraagt je bij het openen welke server je bedoelt — de server-ID heb je hier dus nog niet nodig.
 
-### Stap 3 — Bot draaien
+1. Ga in de Developer Portal naar **OAuth2 → URL Generator**
+2. Selecteer bij Scopes: `bot`, `applications.commands`
+3. Selecteer bij Bot permissions: `Send Messages`, `Manage Roles`, `Read Message History`
+4. Kopieer de gegenereerde URL en open die in je browser
+5. Kies de server waarop je de bot wil toevoegen en bevestig
+
+### Stap 3 — Noteer je server-ID
+
+De bot heeft de server-ID nodig om zijn slash commands te synchroniseren.
+
+Rechtermuisklik op je server in Discord → **Copy Server ID**. (Zet ontwikkelaarsmodus aan via Instellingen → Geavanceerd als de optie ontbreekt.)
+
+### Stap 4 — Bot draaien
 
 ```bash
 # 1. Kloon de repository
