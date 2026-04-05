@@ -1,0 +1,9 @@
+command_name,description,mod_only
+welcome,Geeft de rol 'Actief lid' en stuurt welkomstbericht,Ja
+land,Leden kiezen zelf hun landrol: België of Nederland,Nee
+contact,Leden stellen in hoe ze gecontacteerd mogen worden,Nee
+wie,Toont wie de bot ontwikkeld heeft,Nee
+disclaimer,Toont een disclaimer over de AI-bot,Ja
+modgids,Toont alle beschikbare commands met beschrijvingen,Ja
+regels,Herinnering aan serverregels,Ja
+kanaal,Herinnering om het juiste kanaal te gebruiken,Ja

@@ -4,7 +4,7 @@ from discord import app_commands
 from discord.ext import commands
 import os
 import random
-import json
+import csv
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -17,19 +17,6 @@ guild_id_str = os.getenv('GUILD_ID')
 if guild_id_str is None:
     raise ValueError("FOUT: Kon de guild ID niet vinden. Controleer of je .env bestand 'GUILD_ID=jouw_guild_id' bevat.")
 guild_id = int(guild_id_str)
-
-# ── Reactierollen configuratie ──
-# Elke emoji is gekoppeld aan een rolnaam en een categorie.
-# Rollen binnen dezelfde categorie sluiten elkaar uit.
-REACTIE_ROLLEN: dict[str, dict] = {
-    "🇧🇪": {"rol": "België",           "categorie": "land"},
-    "🇳🇱": {"rol": "Nederland",         "categorie": "land"},
-    "💚":   {"rol": "PB altijd welkom", "categorie": "contact"},
-    "🤔":   {"rol": "Vraag voor PB",    "categorie": "contact"},
-    "🚫":   {"rol": "PB me niet",       "categorie": "contact"},
-}
-REACTIE_ROLLEN_BESTAND = "reaction_roles.json"
-reactie_bericht_id: int | None = None
 
 # Intents (nodig voor member join en berichten)
 intents = discord.Intents.default()
@@ -57,7 +44,7 @@ async def on_member_join(member):
     description="Verwelkom een gebruiker en geef de rol 'Actief lid'"
 )
 @app_commands.describe(member="De gebruiker die je wilt verwelkomen")
-@app_commands.checks.has_permissions(manage_roles=True)  # Alleen moderators
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
 async def welcome(interaction: discord.Interaction, member: discord.Member):
     # Zoek de rol "Actief lid"
     role = discord.utils.get(interaction.guild.roles, name="Actief lid")
@@ -142,62 +129,90 @@ async def contact(interaction: discord.Interaction, keuze: app_commands.Choice[s
     await interaction.response.send_message(f"✅ Je contactvoorkeur is ingesteld op **{keuze.value}**.", ephemeral=True)
 
 
-# ── Slash Command: /setup-reactierollen ──
+# ── Slash Command: /disclaimer ──
 @bot.tree.command(
-    name="setup-reactierollen",
-    description="Plaatst het reactierollen-bericht in #rol-aanvragen (alleen voor moderators)"
+    name="disclaimer",
+    description="Toon de disclaimer over de AI-bot"
 )
-@app_commands.checks.has_permissions(manage_roles=True)
-async def setup_reactierollen(interaction: discord.Interaction):
-    global reactie_bericht_id
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def disclaimer(interaction: discord.Interaction):
+    embed = discord.Embed(
+        description="**Disclaimer:** Deze Discord-bot is gebouwd met behulp van AI, en kan fouten bevatten en maken. Als je iets merkt, kan je dan één van de moderators contacteren?",
+        color=discord.Color.red()
+    )
+    await interaction.response.send_message(embed=embed)
 
-    kanaal = discord.utils.get(interaction.guild.text_channels, name="rol-aanvragen")
-    if not kanaal:
+
+# ── Slash Command: /modgids ──
+@bot.tree.command(
+    name="modgids",
+    description="Toont alle beschikbare commands met beschrijvingen"
+)
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def modgids(interaction: discord.Interaction):
+    # Check if command is called in "moderators" channel
+    if interaction.channel.name != "moderators":
         await interaction.response.send_message(
-            "❌ Kanaal **#rol-aanvragen** niet gevonden.",
+            "❌ Dit command kan alleen in het #moderators kanaal gebruikt worden.",
             ephemeral=True
         )
         return
 
-    # Defer zodat we tijd hebben voor de add_reaction calls
-    await interaction.response.defer(ephemeral=True)
-
-    bericht_inhoud = (
-        "## 🏷️ Reactierollen\n\n"
-        "Reageer op dit bericht met een emoji om een rol te krijgen of te verwijderen.\n\n"
-        "**🌍 Land** *(kies er één)*\n"
-        "🇧🇪 — **België**\n"
-        "🇳🇱 — **Nederland**\n\n"
-        "**📬 Contactvoorkeur** *(kies er één)*\n"
-        "💚 — **PB altijd welkom**: iedereen mag je direct een bericht sturen\n"
-        "🤔 — **Vraag voor PB**: men moet eerst vragen of ze je een PB mogen sturen\n"
-        "🚫 — **PB me niet**: je wil geen persoonlijke berichten ontvangen\n\n"
-        "*(Verwijder je reactie om de rol terug kwijt te spelen.)*"
-    )
-
+    # Read commands from CSV
     try:
-        bericht = await kanaal.send(bericht_inhoud)
+        commands_list = []
+        with open('commands.csv', 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                commands_list.append(row)
 
-        for emoji in REACTIE_ROLLEN:
-            await bericht.add_reaction(emoji)
+        # Build embed message
+        embed = discord.Embed(
+            title="📋 Alle beschikbare Commands",
+            color=discord.Color.blue()
+        )
 
-        reactie_bericht_id = bericht.id
-        with open(REACTIE_ROLLEN_BESTAND, "w") as f:
-            json.dump({"bericht_id": reactie_bericht_id}, f)
+        for cmd in commands_list:
+            command_name = cmd['command_name']
+            description = cmd['description']
+            mod_only = cmd['mod_only']
 
-        await interaction.followup.send(
-            f"✅ Reactierollen-bericht geplaatst in {kanaal.mention}.",
+            # Add badge for mod-only commands
+            badge = "🔐 MOD-ONLY" if mod_only.lower() == "ja" else "✅ Openbaar"
+
+            embed.add_field(
+                name=f"/{command_name}",
+                value=f"{description}\n*{badge}*",
+                inline=False
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+    except FileNotFoundError:
+        await interaction.response.send_message(
+            "❌ Het commands.csv bestand kon niet gevonden worden.",
             ephemeral=True
         )
-        print(f"✅ Reactierollen-bericht aangemaakt met ID {reactie_bericht_id}")
 
-    except discord.Forbidden:
-        await interaction.followup.send(
-            "❌ Ik heb geen toestemming om berichten te sturen of reacties toe te voegen in **#rol-aanvragen**.",
-            ephemeral=True
-        )
-    except Exception as e:
-        await interaction.followup.send(f"Er ging iets mis: {e}", ephemeral=True)
+
+# ── Slash Command: /regels ──
+@bot.tree.command(
+    name="regels",
+    description="Herinnering aan serverregels"
+)
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def regels(interaction: discord.Interaction):
+    await interaction.response.send_message("Denken jullie nog even aan de serverregels?")
+
+
+# ── Slash Command: /kanaal ──
+@bot.tree.command(
+    name="kanaal",
+    description="Herinnering om het juiste kanaal te gebruiken"
+)
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def kanaal(interaction: discord.Interaction):
+    await interaction.response.send_message("Willen jullie wel even het juiste kanaal gebruiken?")
 
 
 # ── Uitleg sturen als iemand iets typt in rol-aanvragen ──
@@ -207,10 +222,7 @@ async def on_message(message):
         return
     if message.channel.name == "rol-aanvragen":
         await message.channel.send(
-            f"{message.author.mention} Je kan hier enkele rollen zelf aanvragen:\n\n"
-            f"**Via reacties** — zoek het vastgepinde bericht 🏷️ Reactierollen hierboven en reageer met een emoji:\n"
-            f"🇧🇪 België · 🇳🇱 Nederland · 💚 PB altijd welkom · 🤔 Vraag voor PB · 🚫 PB me niet\n\n"
-            f"**Via slash commands:**\n"
+            f"{message.author.mention} Je kan hier enkele rollen zelf aanvragen via slash commands:\n"
             f"• **/land** — kies **België** of **Nederland**\n"
             f"• **/contact** — kies hoe anderen je mogen contacteren:\n"
             f"  - **PB me niet**: je wil geen persoonlijke berichten ontvangen\n"
@@ -219,83 +231,6 @@ async def on_message(message):
             f"Kleurrollen en andere rollen worden door de mods toegekend."
         )
     await bot.process_commands(message)
-
-
-# ── Reactie toegevoegd: rol toewijzen ──
-@bot.event
-async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
-    if payload.user_id == bot.user.id:
-        return
-    if reactie_bericht_id is None or payload.message_id != reactie_bericht_id:
-        return
-
-    emoji = str(payload.emoji)
-    if emoji not in REACTIE_ROLLEN:
-        return
-
-    guild = bot.get_guild(payload.guild_id)
-    if guild is None:
-        return
-
-    member = guild.get_member(payload.user_id)
-    if member is None:
-        return
-
-    config = REACTIE_ROLLEN[emoji]
-    rol_naam = config["rol"]
-    categorie = config["categorie"]
-
-    # Verwijder conflicterende rollen in dezelfde categorie
-    rollen_verwijderen = [
-        r for r in member.roles
-        if r.name in {v["rol"] for v in REACTIE_ROLLEN.values() if v["categorie"] == categorie}
-        and r.name != rol_naam
-    ]
-    if rollen_verwijderen:
-        try:
-            await member.remove_roles(*rollen_verwijderen)
-        except discord.Forbidden:
-            print(f"⚠️ Kan rollen niet verwijderen voor {member}: geen rechten.")
-            return
-
-    # Voeg de nieuwe rol toe
-    rol = discord.utils.get(guild.roles, name=rol_naam)
-    if rol:
-        try:
-            await member.add_roles(rol)
-        except discord.Forbidden:
-            print(f"⚠️ Kan rol '{rol_naam}' niet toevoegen aan {member}: geen rechten.")
-    else:
-        print(f"⚠️ Rol '{rol_naam}' niet gevonden op de server.")
-
-
-# ── Reactie verwijderd: rol intrekken ──
-@bot.event
-async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
-    if reactie_bericht_id is None or payload.message_id != reactie_bericht_id:
-        return
-
-    emoji = str(payload.emoji)
-    if emoji not in REACTIE_ROLLEN:
-        return
-
-    guild = bot.get_guild(payload.guild_id)
-    if guild is None:
-        return
-
-    member = guild.get_member(payload.user_id)
-    if member is None:
-        return
-
-    rol_naam = REACTIE_ROLLEN[emoji]["rol"]
-    rol = discord.utils.get(guild.roles, name=rol_naam)
-    if rol:
-        try:
-            await member.remove_roles(rol)
-        except discord.Forbidden:
-            print(f"⚠️ Kan rol '{rol_naam}' niet verwijderen van {member}: geen rechten.")
-    else:
-        print(f"⚠️ Rol '{rol_naam}' niet gevonden op de server.")
 
 
 # ── Slash Command: /wie ──
@@ -313,18 +248,7 @@ async def wie(interaction: discord.Interaction):
 @bot.event
 async def on_ready():
     print(f'✅ Bot is online als {bot.user}')
-
-    # Laad het reactierollen bericht-ID vanuit het JSON-bestand (indien aanwezig)
-    global reactie_bericht_id
-    if os.path.exists(REACTIE_ROLLEN_BESTAND):
-        try:
-            with open(REACTIE_ROLLEN_BESTAND, "r") as f:
-                data = json.load(f)
-                reactie_bericht_id = data.get("bericht_id")
-            print(f"✅ Reactierollen bericht-ID geladen: {reactie_bericht_id}")
-        except Exception as e:
-            print(f"⚠️ Kon {REACTIE_ROLLEN_BESTAND} niet laden: {e}")
-
+   
     # Sync slash commands voor jouw server (vervang JE_SERVER_ID)
     try:
         guild = discord.Object(id=guild_id)
