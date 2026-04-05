@@ -4,6 +4,7 @@ from discord import app_commands
 from discord.ext import commands
 import os
 import random
+import csv
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -43,7 +44,7 @@ async def on_member_join(member):
     description="Verwelkom een gebruiker en geef de rol 'Actief lid'"
 )
 @app_commands.describe(member="De gebruiker die je wilt verwelkomen")
-@app_commands.checks.has_permissions(manage_roles=True)  # Alleen moderators
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
 async def welcome(interaction: discord.Interaction, member: discord.Member):
     # Zoek de rol "Actief lid"
     role = discord.utils.get(interaction.guild.roles, name="Actief lid")
@@ -126,6 +127,92 @@ async def contact(interaction: discord.Interaction, keuze: app_commands.Choice[s
         await member.remove_roles(*rollen_verwijderen)
     await member.add_roles(rol_toevoegen)
     await interaction.response.send_message(f"✅ Je contactvoorkeur is ingesteld op **{keuze.value}**.", ephemeral=True)
+
+
+# ── Slash Command: /disclaimer ──
+@bot.tree.command(
+    name="disclaimer",
+    description="Toon de disclaimer over de AI-bot"
+)
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def disclaimer(interaction: discord.Interaction):
+    embed = discord.Embed(
+        description="**Disclaimer:** Deze Discord-bot is gebouwd met behulp van AI, en kan fouten bevatten en maken. Als je iets merkt, kan je dan één van de moderators contacteren?",
+        color=discord.Color.red()
+    )
+    await interaction.response.send_message(embed=embed)
+
+
+# ── Slash Command: /modgids ──
+@bot.tree.command(
+    name="modgids",
+    description="Toont alle beschikbare commands met beschrijvingen"
+)
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def modgids(interaction: discord.Interaction):
+    # Check if command is called in "moderators" channel
+    if interaction.channel.name != "moderators":
+        await interaction.response.send_message(
+            "❌ Dit command kan alleen in het #moderators kanaal gebruikt worden.",
+            ephemeral=True
+        )
+        return
+
+    # Read commands from CSV
+    try:
+        commands_list = []
+        with open('commands.csv', 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                commands_list.append(row)
+
+        # Build embed message
+        embed = discord.Embed(
+            title="📋 Alle beschikbare Commands",
+            color=discord.Color.blue()
+        )
+
+        for cmd in commands_list:
+            command_name = cmd['command_name']
+            description = cmd['description']
+            mod_only = cmd['mod_only']
+
+            # Add badge for mod-only commands
+            badge = "🔐 MOD-ONLY" if mod_only.lower() == "ja" else "✅ Openbaar"
+
+            embed.add_field(
+                name=f"/{command_name}",
+                value=f"{description}\n*{badge}*",
+                inline=False
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+    except FileNotFoundError:
+        await interaction.response.send_message(
+            "❌ Het commands.csv bestand kon niet gevonden worden.",
+            ephemeral=True
+        )
+
+
+# ── Slash Command: /regels ──
+@bot.tree.command(
+    name="regels",
+    description="Herinnering aan serverregels"
+)
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def regels(interaction: discord.Interaction):
+    await interaction.response.send_message("Denken jullie nog even aan de serverregels?")
+
+
+# ── Slash Command: /kanaal ──
+@bot.tree.command(
+    name="kanaal",
+    description="Herinnering om het juiste kanaal te gebruiken"
+)
+@app_commands.checks.has_role("Moderator")  # Alleen moderators
+async def kanaal(interaction: discord.Interaction):
+    await interaction.response.send_message("Willen jullie wel even het juiste kanaal gebruiken?")
 
 
 # ── Uitleg sturen als iemand iets typt in rol-aanvragen ──
