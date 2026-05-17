@@ -2,7 +2,7 @@
 
 ![Banner](Banner.png)
 
-Een Discord-bot op maat voor de vereniging — gebouwd met [discord.py](https://discordpy.readthedocs.io/). Passbot verwelkomt nieuwe leden, kent rollen toe en geeft leden de mogelijkheid om zelf hun land en contactvoorkeur in te stellen via slash commands.
+Een Discord-bot gebouwd als leerproject — demonstreert slash commands, automatisch rolbeheer en ledenverwerking via discord.py. Getest op een privé-testserver.
 
 ---
 
@@ -121,4 +121,5 @@ Installeren: `pip install -r requirements.txt`
 
 ---
 
-Ontwikkeld door [Davyscodelab](https://github.com/Davyscodelab). Met dank aan de community voor de input en de testen.
+## Notities
+Ontwikkeld met in VSCode met behulp van Claude Code. Met dank aan de community voor de input en de testen.
